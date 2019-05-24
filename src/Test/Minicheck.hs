@@ -1,5 +1,4 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving  #-}
-{-# LANGUAGE BangPatterns  #-}
 
 module Test.Minicheck where
 
@@ -61,13 +60,12 @@ instance Arbitrary Bool where
   shrink True = [False]
 
 
--- | NB: this will generate a *very large* shrink lists;
--- must be used with some search limiting criteria
 shrinkIntegral :: Integral a => a -> [a]
-shrinkIntegral 0 = []
 shrinkIntegral n
-  | n>0 = 0 : [ n`div`2 | n>2 ] ++ [n-1, n-2.. 1]
-  | n<0 = 0 : 1 : [ n`div`2 | n>2 ] ++ [-1, -2..n+1]                 
+  | n>0 = 0 : [ n`div`2 | n>2 ] ++ [n-1 | n>1] ++ [n-2 | n>2]
+  | n<0 = 0 : 1 : [ n`div`2 | n<(-2) ] ++ [n+1 | n<(-1)] ++ [n+2 | n<(-2)]
+shrinkIntegral _ = []
+
 
   
 instance (Arbitrary a, Arbitrary b) => Arbitrary (a,b) where
@@ -144,22 +142,22 @@ check prop = putStr "Testing" >> loop 1
                  else do printf "\nFailed after %d tests:\n" i
                          printTestCase r
                          putStr "Shrinking"
-                         r' <- shrinkLoop t
+                         r' <- searchShrink t
                          putStrLn "Minimal failure case:"
                          printTestCase r'
     loop i = printf "\nOK, passed %d tests.\n" i
 
 -- | traverse result tree looking for a smaller failure example
-shrinkLoop :: Tree Result -> IO Result
-shrinkLoop t@(Node r ts) = loop maxShrinks t
+searchShrink :: Tree Result -> IO Result
+searchShrink t@(Node r ts) = search maxShrinks t
   where
-    loop :: Int -> Tree Result -> IO Result
-    loop availShrinks t@(Node r ts)
-      | availShrinks > 0 = 
-          case dropWhile (ok.rootLabel.snd) (zip [0..] ts) of
+    search :: Int -> Tree Result -> IO Result
+    search avail t@(Node r ts)
+      | avail > 0 = 
+          case dropWhile (ok.rootLabel) ts of
             [] -> putChar '\n' >> return r
-            ((k,t):_) -> putChar '.' >> loop (availShrinks-k) t
-    loop _ t@(Node r _) = do
+            (t:_) -> putChar '.' >> search (avail-1) t
+    search _ t@(Node r _) = do
       printf "\nGave up after %d shrinking attempts!\n" maxShrinks
       return r
                                   
