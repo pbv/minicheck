@@ -1,0 +1,40 @@
+name:                minicheck
+version:             0.1.0.0
+github:              "pbv/minicheck"
+license:             BSD3
+author:              "Pedro Baltazar Vasconcelos"
+maintainer:          "pbv@dcc.fc.up.pt"
+copyright:           "2019 Pedro Vasconcelos"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/githubuser/propshrink#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- containers
+- random
+
+library:
+  source-dirs: src/
+
+executables:
+  example:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - minicheck
+
