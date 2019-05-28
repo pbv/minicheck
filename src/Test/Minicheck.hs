@@ -11,13 +11,21 @@ import           Text.Printf
 -- generators
 --
 newtype Gen a = MkGen { runGen :: R.StdGen -> a }
-              deriving (Functor, Applicative)
+              deriving (Functor)
 
 -- | NB: this is not just the reader monad for (StdGen ->)
 -- because the random generator is split between computations
 instance Monad Gen where
+  return x = MkGen (\_ -> x)
   m >>= f = MkGen (\s -> let (s', s'') = R.split s
                          in runGen (f (runGen m s')) s'')
+
+-- | applicate instance implied by monadic operations;
+-- if R.split is well-behaved the evaluation order should not be observable
+instance Applicative Gen where
+  pure = return
+  mf <*> ma = do  f <- mf; a <- ma; return (f a)
+
 
 -- base generators
 -- choose a discrete random value uniformly
@@ -182,6 +190,9 @@ check prop = checkWith failure prop
       putStrLn "Minimal test case:"
       printTestCase r'
 
+-- | print the test case in a result
+printTestCase :: Result -> IO ()
+printTestCase = mapM_ putStrLn . testCase
 
 -- | check a property and print the shrinking tree
 checkTree :: Testable prop => prop -> IO ()
@@ -214,7 +225,4 @@ shrinkSearch (Node r ts) = loop maxShrinks r ts
     loop _ r _ = do printf "\nGave up after %d shrink steps!\n" maxShrinks
                     return r
 
--- | print the test case in a result
-printTestCase :: Result -> IO ()
-printTestCase = mapM_ putStrLn . testCase
 
