@@ -24,6 +24,7 @@ dependencies:
 - containers
 - random
 
+
 library:
   source-dirs: src/
 
@@ -32,9 +33,7 @@ executables:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
-    - -threaded
     - -rtsopts
-    - -with-rtsopts=-N
     dependencies:
     - minicheck
 
